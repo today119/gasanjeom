@@ -1,0 +1,531 @@
+<title>인천 중등 가산점 계산기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --paper:#f4f6f9; --card:#ffffff; --ink:#16202e; --ink2:#43536a; --ink3:#7688a0;
+    --line:#dbe2ec; --accent:#2f5aa8; --accent-soft:#e8eef8; --teal:#0f8a7e;
+    --amber:#c9821f; --amber-soft:#f8eede; --red:#c0453b; --good:#1f8a53;
+    --mono:'SF Mono',ui-monospace,'Menlo',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard','Malgun Gothic',sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --paper:#0f151e; --card:#161e2a; --ink:#e6ecf5; --ink2:#a7b6ca; --ink3:#6f8098;
+      --line:#26313f; --accent:#6ea0e6; --accent-soft:#1b2740; --teal:#37b3a4;
+      --amber:#e0a54a; --amber-soft:#33291a; --red:#e0685e; --good:#4cc07f; }
+  }
+  :root[data-theme="light"]{ --paper:#f4f6f9; --card:#fff; --ink:#16202e; --ink2:#43536a; --ink3:#7688a0;
+    --line:#dbe2ec; --accent:#2f5aa8; --accent-soft:#e8eef8; --teal:#0f8a7e; --amber:#c9821f;
+    --amber-soft:#f8eede; --red:#c0453b; --good:#1f8a53; }
+  :root[data-theme="dark"]{ --paper:#0f151e; --card:#161e2a; --ink:#e6ecf5; --ink2:#a7b6ca; --ink3:#6f8098;
+    --line:#26313f; --accent:#6ea0e6; --accent-soft:#1b2740; --teal:#37b3a4; --amber:#e0a54a;
+    --amber-soft:#33291a; --red:#e0685e; --good:#4cc07f; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-text-size-adjust:100%}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 80px}
+  h1{font-size:1.5rem;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);font-size:.9rem;margin:0 0 18px}
+  .eyebrow{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0;
+    box-shadow:0 1px 2px rgba(20,32,46,.04)}
+  .card h2{font-size:1.05rem;margin:0 0 3px;display:flex;align-items:center;gap:8px}
+  .card .hint{color:var(--ink3);font-size:.8rem;margin:0 0 14px}
+  .grouptag{font-size:.68rem;font-weight:700;color:var(--accent);background:var(--accent-soft);
+    padding:2px 8px;border-radius:20px}
+
+  label{display:block;font-size:.8rem;color:var(--ink2);font-weight:600;margin-bottom:4px}
+  input,select{width:100%;font-family:var(--sans);font-size:.92rem;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+  input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .field{margin-bottom:12px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+  /* summary */
+  .summary{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--card),var(--card));
+    border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:0 0 8px;
+    box-shadow:0 6px 20px rgba(20,32,46,.10)}
+  .total{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .total .big{font-family:var(--mono);font-size:2.5rem;font-weight:700;letter-spacing:-.02em;
+    color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+  .total .unit{font-size:1rem;color:var(--ink2)}
+  .split{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap}
+  .split div{font-size:.86rem;color:var(--ink2)}
+  .split b{font-family:var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{font-size:.72rem;padding:3px 9px;border-radius:20px;border:1px solid var(--line);
+    color:var(--ink2);font-variant-numeric:tabular-nums;background:var(--paper)}
+  .chip b{color:var(--ink);font-family:var(--mono)}
+  .chip.full{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+
+  /* rows table */
+  .rowline{display:grid;grid-template-columns:1fr;gap:8px;padding:12px;border:1px solid var(--line);
+    border-radius:11px;margin-bottom:10px;background:var(--paper)}
+  .rowline.excluded{opacity:.55}
+  .rowgrid{display:grid;grid-template-columns:1.4fr 1fr .7fr;gap:8px}
+  .rowfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .rowpts{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums;font-size:.95rem}
+  .rowpts small{font-weight:400;color:var(--ink3)}
+  .badge{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:6px}
+  .badge.keep{background:var(--accent-soft);color:var(--accent)}
+  .badge.drop{background:var(--amber-soft);color:var(--amber)}
+  .badge.half{background:var(--amber-soft);color:var(--amber)}
+  .cbox{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink2);font-weight:500}
+  .cbox input{width:auto}
+  button{font-family:var(--sans);cursor:pointer}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:700;font-size:.88rem}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+  .del{background:transparent;border:none;color:var(--ink3);font-size:1.1rem;padding:2px 8px;line-height:1}
+  .del:hover{color:var(--red)}
+
+  /* result group bars */
+  .gres{border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:10px;background:var(--paper)}
+  .gres .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+  .gres .gh .gt{font-weight:700;font-size:.92rem}
+  .gres .gh .gv{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+  .gres .gh .gv.capped{color:var(--amber)}
+  .bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;display:flex}
+  .bar i{display:block;height:100%}
+  .bar i.fill{background:var(--accent)}
+  .bar i.waste{background:var(--amber);opacity:.7}
+  .itemline{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--ink2);
+    padding:5px 0;border-top:1px dashed var(--line);margin-top:6px;font-variant-numeric:tabular-nums}
+  .itemline:first-of-type{border-top:none;margin-top:8px}
+  .itemline .iv{font-family:var(--mono)}
+  .itemline .waste-t{color:var(--amber);font-size:.72rem}
+
+  .note{font-size:.78rem;color:var(--ink3);background:var(--paper);border:1px dashed var(--line);
+    border-radius:9px;padding:10px 12px;margin-top:10px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar .sel{max-width:190px}
+  .theme{margin-left:auto}
+  .disc{font-size:.75rem;color:var(--ink3);line-height:1.5;margin-top:24px;border-top:1px solid var(--line);padding-top:14px}
+  details summary{cursor:pointer;font-weight:600;font-size:.85rem;color:var(--accent)}
+  @media(min-width:760px){
+    .cols{display:grid;grid-template-columns:1fr;gap:0}
+    .rowline{grid-template-columns:1fr}
+  }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">인천광역시교육청 · 교육공무원승진규정 가산점(중등)</div>
+  <h1>가산점 계산기 <span style="font-size:.7rem;color:var(--ink3);font-weight:500">v1 · 추정용</span></h1>
+  <p class="sub">공고 2026-319호(2026.7.24 개정) 기준. 근무 경력을 입력하면 <b>항목·그룹·총합 상한</b>을 자동 적용하고, 같은 경력을 여러 항목에 넣을 수 있을 때 <b>더 높은 쪽으로 택일</b>합니다.</p>
+
+  <div class="toolbar">
+    <div>
+      <label for="baseYear" style="margin-bottom:2px">평정 기준(순위명부) 연도</label>
+      <select id="baseYear" class="sel">
+        <option value="2027">2027.3.31 명부</option>
+        <option value="2028">2028.3.31 명부</option>
+        <option value="2029">2029.3.31 명부</option>
+        <option value="2030">2030.3.31 명부 (그룹상한 3.0)</option>
+      </select>
+    </div>
+    <button class="btn ghost theme" id="themeBtn" type="button">🌓 테마</button>
+  </div>
+
+  <div class="summary">
+    <div class="eyebrow">예상 총 가산점</div>
+    <div class="total"><span class="big" id="grand">0.000</span><span class="unit">점</span></div>
+    <div class="split">
+      <div>공통가산점 <b id="commonTot">0.000</b></div>
+      <div>선택가산점 <b id="selTot">0.000</b> <span style="color:var(--ink3)">/ 상한 8.0</span></div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <!-- 공통가산점 -->
+  <div class="card">
+    <h2>공통가산점 <span class="grouptag">제4조</span></h2>
+    <p class="hint">각 항목 독립 상한. 값을 모르면 0으로 두세요.</p>
+    <div class="row2">
+      <div class="field"><label>연구학교(시범·실험) 근무 개월수 <span style="color:var(--ink3)">·월0.018·상한1.0</span></label><input type="number" min="0" step="0.5" data-c="research" value="0"></div>
+      <div class="field"><label>재외국민교육기관 파견 개월수 <span style="color:var(--ink3)">·월0.015·상한0.5</span></label><input type="number" min="0" step="0.5" data-c="overseas" value="0"></div>
+      <div class="field"><label>직무연수 이수학점 <span style="color:var(--ink3)">·학점0.02·상한1.0</span></label><input type="number" min="0" step="1" data-c="credit" value="0"></div>
+      <div class="field"><label>학교폭력 예방·대응 실적(연 수) <span style="color:var(--ink3)">·연0.1·상한1.0</span></label><input type="number" min="0" step="1" data-c="sv" value="0"></div>
+    </div>
+    <div class="note">직무연수 학점은 <b>학년도별 0.08점</b> 상한이 있어(1년에 최대 4학점 반영). 총 상한 1.0.</div>
+  </div>
+
+  <!-- 선택 경력 -->
+  <div class="card">
+    <h2>선택가산점 — 근무 경력</h2>
+    <p class="hint">경력을 한 줄씩 추가하세요. 도서·벽지/특수지역은 <b>학교를 고르면 지역등급·점수가 자동</b>으로 잡힙니다. 같은 기간이 여러 항목에 겹치면 아래 <b>중복그룹</b>을 같은 알파벳으로 묶으면 자동으로 유리한 하나만 반영됩니다.</p>
+    <div id="rows"></div>
+    <button class="btn" id="addRow" type="button">＋ 경력 추가</button>
+  </div>
+
+  <!-- 실적·자격 -->
+  <div class="card">
+    <h2>선택가산점 — 실적 · 자격</h2>
+    <p class="hint">기간이 아닌 실적/자격 항목.</p>
+    <div class="field"><label>교실수업개선 연구경력 — 수업연구발표대회 입상 <span style="color:var(--ink3)">(그룹: 교육감 인정 연구경력, 상한1.0)</span></label>
+      <div class="row3">
+        <div><label style="font-weight:500">1등급 ×0.15</label><input type="number" min="0" step="1" data-a="class1" value="0"></div>
+        <div><label style="font-weight:500">2등급 ×0.10</label><input type="number" min="0" step="1" data-a="class2" value="0"></div>
+        <div><label style="font-weight:500">3등급 ×0.05</label><input type="number" min="0" step="1" data-a="class3" value="0"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field" id="certField"><label>국가기술 자격증 <span style="color:var(--ink3)">(상위 1개, 상한0.5)</span></label>
+        <select data-a="cert"><option value="none">없음</option><option value="A">A등급 (0.5)</option><option value="B">B등급 (0.25)</option></select>
+      </div>
+      <div class="field"><label>청소년봉사단 지도(연 수) <span style="color:var(--ink3)">·연0.06·상한0.5</span></label><input type="number" min="0" step="1" data-a="youth" value="0"></div>
+    </div>
+  </div>
+
+  <!-- 결과 상세 -->
+  <div class="card">
+    <h2>그룹별 상세 · 상한 적용</h2>
+    <p class="hint">막대의 <span style="color:var(--amber)">주황</span>은 상한에 막혀 <b>버려진 점수</b>입니다 — 다른 항목으로 옮기면 살릴 수 있다는 신호.</p>
+    <div id="results"></div>
+  </div>
+
+  <details style="margin:14px 2px">
+    <summary>이 계산기가 반영하는 규칙 요약</summary>
+    <div class="note" style="margin-top:10px">
+      • <b>상한 3중</b>: 항목상한 → 그룹상한 → 선택 총합(별표 기준 8.0).<br>
+      • <b>택일</b>: 같은 기간이 여러 항목 자격을 만족하면 유리한 하나만(중복그룹으로 묶음). 도서벽지·농어촌 ↔ 학교교육유공은 2015.3.1~2017.2.28에 한해 50% 중복 → 해당 줄의 "50% 중복" 체크.<br>
+      • <b>학교 지정제</b>: 도서벽지(A~E)·특수지역(A~C)은 지정 학교·지역별 점수. 특수지역 C의 청천중·백석중·신현중은 2029.3.1자 삭제(2030 명부부터 제외).<br>
+      • <b>명부 연도 효과</b>: 지역근무 그룹상한 2.75→3.0(2030 명부~), 신설학교(2027~), 도서벽지 유공경력(2026 명부~), 국가기술자격증 폐지(2030 명부부터 제외).<br>
+      • 연구학교(공통)와 연구·정책추진학교(선택)는 합산 1.0 상한.
+    </div>
+  </details>
+
+  <div class="disc">
+    ⚠️ <b>비공식 추정 도구입니다.</b> 실제 가산점은 명부작성권자의 공식 평정이 최종입니다. 월 단위·1개월 미만 일 단위 평정, 부칙의 세부 경과조치, 개인 취득시점별 인정범위는 이 도구가 완전히 반영하지 못할 수 있습니다. 반드시 소속 교육청/인사 담당 확인을 병행하세요.<br>
+    출처: 인천광역시교육청 공고 제2026-319호 「교육공무원승진규정 중 가산점 부여기준(중등)」.
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+/* ---------- 규칙 데이터 ---------- */
+const GROUPS={
+  G1:{name:'지역근무 및 유공경력', cap:2.75},
+  G2:{name:'보직교사·전문직 근무경력', cap:1.75},
+  G3:{name:'특수교육·한센·보직 근무경력', cap:1.0},
+  G4:{name:'교육감 인정 연구경력', cap:1.0},
+  G5:{name:'국가기술 자격증 소지', cap:0.5},
+  G6:{name:'인천교육 공헌실적', cap:1.0},
+};
+// 시간형 항목: rate=월평정점, cap=항목상한, group
+const ITEMS={
+  dobseo:   {label:'도서·벽지 경력', group:'G1', cap:2.0, region:'dobseo'},
+  nongeo:   {label:'농어촌 경력', group:'G1', cap:1.5, rate:0.020},
+  special:  {label:'특수지역 교육활동경력', group:'G1', cap:1.0, region:'special'},
+  merit:    {label:'학교교육 유공경력', group:'G1', cap:2.0, rate:0.022},
+  boj_b:    {label:'보직교사 경력', group:'G2', cap:1.75, rate:0.021},
+  jse:      {label:'장학사·교육연구사', group:'G2', cap:1.25, rate:0.021},
+  integ:    {label:'통합학급 담임(특수교육대상자)', group:'G3', cap:1.0, rate:0.0053},
+  hansen:   {label:'한센병환자자녀 지도', group:'G3', cap:1.0, rate:0.021},
+  boj_c:    {label:'보직교사 경력(특수그룹)', group:'G3', cap:0.3, rate:0.005},
+  respol:   {label:'연구·정책추진학교', group:'G4', cap:1.0, rate:0.01},
+  practicum:{label:'교육실습 대용·협력학교', group:'G4', cap:1.0, rate:0.01},
+  dobmerit: {label:'도서·벽지 교육진흥 유공경력', group:'G4', cap:0.5, region:'dobmerit'},
+  newsch:   {label:'신설학교 근무', group:'G4', cap:0.5, rate:0.0045},
+  center:   {label:'중심학교 담당', group:'G6', cap:0.5, rate:0.005},
+  auton:    {label:'자율학교 담당', group:'G6', cap:0.5, rate:0.005},
+  homeroom: {label:'담임교사 경력', group:'G6', cap:0.3, rate:0.003},
+};
+// 지역 월평정점
+const REGION={
+  dobseo:{A:0.056,B:0.046,C:0.036,D:0.026,E:0.020},
+  special:{A:0.020,B:0.015,C:0.010},
+  dobmerit:{A:0.010,B:0.0081,C:0.0063}, // 2025.3.1~ 현행
+};
+// 지정 학교 → 지역
+const SCHOOLS={
+  dobseo:{
+    A:['연평중','연평고','백령중','백령고','대청중','대청고'],
+    B:['덕적중','덕적고','교동중','교동고','서도중','서도고'],
+    C:['영흥중','인천영흥고','강서중'],
+    E:['강화중','강화고','강화여중','강화여고'],
+  },
+  special:{
+    A:['용유중','인천국제고','인천과학고'],
+    B:['인천공항중','영종중','인천중산중','인천공항고','인천영종고','영종국제물류고','인천하늘중','인천중산고','인천운서중','인천운남고'],
+    C:['화도진중','청천중','함박중','백석중','인천석남중','신현중','인천소방고','인천체고'],
+  },
+};
+const SUNSET_SPECIAL_C=['청천중','백석중','신현중']; // 2030 명부부터 제외
+// 50% 중복 허용 쌍(2015.3.1~2017.2.28): 도서벽지/농어촌 ↔ 학교교육유공
+const HALF_PAIRS=[['dobseo','merit'],['nongeo','merit']];
+
+let state={ baseYear:2027, rows:[], common:{research:0,overseas:0,credit:0,sv:0},
+  achieve:{class1:0,class2:0,class3:0,cert:'none',youth:0} };
+let rid=0;
+function newRow(){ return {id:++rid, type:'merit', region:'', school:'', months:0, conflict:'', half:false}; }
+
+/* ---------- 계산 ---------- */
+function rowRate(r){
+  const it=ITEMS[r.type]; if(!it) return 0;
+  if(it.region){ return (REGION[it.region]||{})[r.region] || 0; }
+  return it.rate||0;
+}
+function rowRaw(r){ return +(rowRate(r)*(+r.months||0)).toFixed(6); }
+
+function compute(){
+  const by=+state.baseYear;
+  // 동적 상한/가용성
+  const g1cap = by>=2030 ? 3.0 : 2.75;
+  const certOn = by<2030;                // 자격증: 2030 명부부터 제외
+  const newschOn = by>=2027;
+  const dobmeritOn = by>=2026;
+
+  // 1) 행 raw + 택일 처리 (+ 특수지역C 일몰 학교 제외)
+  const rows=state.rows.map(r=>{
+    let raw=rowRaw(r);
+    if(r.type==='special' && r.region==='C' && by>=2030 && SUNSET_SPECIAL_C.includes(r.school)) raw=0;
+    return {...r, raw, status:'keep', eff:raw};
+  });
+  const byConf={};
+  rows.forEach(r=>{ if(r.conflict){ (byConf[r.conflict]=byConf[r.conflict]||[]).push(r);} });
+  Object.values(byConf).forEach(grp=>{
+    if(grp.length<2) return;
+    grp.sort((a,b)=>b.raw-a.raw);
+    const win=grp[0];
+    for(let i=1;i<grp.length;i++){
+      const r=grp[i];
+      const pairEl=(a,b)=>HALF_PAIRS.some(([x,y])=>(a===x&&b===y)||(a===y&&b===x));
+      if(r.half && win.half && pairEl(r.type,win.type)){ r.status='half'; r.eff=+(r.raw*0.5).toFixed(6); }
+      else { r.status='drop'; r.eff=0; }
+    }
+  });
+
+  // 2) 항목별 합 → 항목상한
+  const itemSum={};
+  rows.forEach(r=>{ if(r.eff>0){ itemSum[r.type]=(itemSum[r.type]||0)+r.eff; } });
+  // 실적/자격 → 항목 주입
+  const a=state.achieve;
+  const classImprove = a.class1*0.15 + a.class2*0.10 + a.class3*0.05;
+  if(classImprove>0) itemSum['classimprove']=classImprove;
+  let certPts = a.cert==='A'?0.5 : a.cert==='B'?0.25 : 0;
+  if(!certOn) certPts=0;
+  const youthPts = (+a.youth||0)*0.06;
+
+  const EXTRA={
+    classimprove:{label:'교실수업개선 입상',group:'G4',cap:1.0},
+    cert:{label:'국가기술 자격증',group:'G5',cap:0.5},
+    youth:{label:'청소년봉사단 지도',group:'G6',cap:0.5},
+  };
+  if(certPts>0) itemSum['cert']=certPts;
+  if(youthPts>0) itemSum['youth_a']=youthPts;
+
+  function defOf(k){
+    if(k==='youth_a') return {label:'청소년봉사단 지도',group:'G6',cap:0.5};
+    return ITEMS[k]||EXTRA[k];
+  }
+  // 가용성 필터(명부연도)
+  const itemCapped={}; const groupItems={};
+  Object.entries(itemSum).forEach(([k,v])=>{
+    const d=defOf(k); if(!d) return;
+    if(k==='newsch' && !newschOn) return;
+    if(k==='dobmerit' && !dobmeritOn) return;
+    if(k==='cert' && !certOn) return;
+    let capped=Math.min(v, d.cap);
+    itemCapped[k]={raw:v, capped, waste:+(v-capped).toFixed(4), def:d};
+    (groupItems[d.group]=groupItems[d.group]||[]).push(k);
+  });
+
+  // 연구학교(공통) + 연구·정책추진(선택) 합산 1.0
+  const commonRes = Math.min((+state.common.research||0)*0.018, 1.0);
+  if(itemCapped['respol']){
+    const room=Math.max(0, 1.0-commonRes);
+    if(itemCapped['respol'].capped>room){
+      itemCapped['respol'].waste=+(itemCapped['respol'].raw-room).toFixed(4);
+      itemCapped['respol'].capped=room;
+      itemCapped['respol'].note='공통 연구학교와 합산 1.0 제한';
+    }
+  }
+
+  // 3) 그룹별 합 → 그룹상한
+  const groupRes={};
+  Object.keys(GROUPS).forEach(g=>{
+    let cap=GROUPS[g].cap; if(g==='G1') cap=g1cap; if(g==='G5'&&!certOn) cap=0;
+    const items=(groupItems[g]||[]).map(k=>({k,...itemCapped[k]}));
+    const sum=items.reduce((s,it)=>s+it.capped,0);
+    const capped=Math.min(sum,cap);
+    groupRes[g]={name:GROUPS[g].name, cap, sum:+sum.toFixed(4), capped:+capped.toFixed(4),
+      waste:+(sum-capped).toFixed(4), items};
+  });
+
+  // 4) 선택 총합 → 8.0
+  const selRaw=Object.values(groupRes).reduce((s,g)=>s+g.capped,0);
+  const selTotal=Math.min(selRaw, 8.0);
+
+  // 공통
+  const c=state.common;
+  const common={
+    research:commonRes,
+    overseas:Math.min((+c.overseas||0)*0.015,0.5),
+    credit:Math.min((+c.credit||0)*0.02,1.0),
+    sv:Math.min((+c.sv||0)*0.1,1.0),
+  };
+  const commonTot=common.research+common.overseas+common.credit+common.sv;
+
+  return {rows, groupRes, selTotal:+selTotal.toFixed(4), selRaw:+selRaw.toFixed(4),
+    common, commonTot:+commonTot.toFixed(4), grand:+(commonTot+selTotal).toFixed(4),
+    g1cap, certOn, newschOn, dobmeritOn};
+}
+
+/* ---------- 렌더 ---------- */
+const ITEM_OPTIONS=[
+  ['G1 지역근무·유공',['dobseo','nongeo','special','merit']],
+  ['G2 보직·전문직',['boj_b','jse']],
+  ['G3 특수·한센·보직',['integ','hansen','boj_c']],
+  ['G4 교육감 인정 연구',['respol','practicum','dobmerit','newsch']],
+  ['G6 인천교육 공헌',['center','auton','homeroom']],
+];
+function typeSelect(r){
+  let h=`<select data-f="type" data-id="${r.id}">`;
+  ITEM_OPTIONS.forEach(([g,ks])=>{ h+=`<optgroup label="${g}">`;
+    ks.forEach(k=>{ h+=`<option value="${k}" ${r.type===k?'selected':''}>${ITEMS[k].label}</option>`; });
+    h+=`</optgroup>`; });
+  return h+`</select>`;
+}
+function schoolSelect(r){
+  const it=ITEMS[r.type]; if(!it.region || !SCHOOLS[it.region]) {
+    if(it.region==='dobmerit') return `<select data-f="region" data-id="${r.id}">
+      <option value="">지역…</option>${['A','B','C'].map(x=>`<option ${r.region===x?'selected':''}>${x}</option>`).join('')}</select>`;
+    return '';
+  }
+  const sch=SCHOOLS[it.region];
+  let h=`<select data-f="school" data-id="${r.id}"><option value="">학교 선택…</option>`;
+  Object.entries(sch).forEach(([reg,list])=>{ h+=`<optgroup label="${reg}지역">`;
+    list.forEach(s=>{ h+=`<option value="${s}|${reg}" ${r.school===s?'selected':''}>${s} (${reg})</option>`; });
+    h+=`</optgroup>`; });
+  return h+`</select>`;
+}
+function renderRows(res){
+  const box=$('#rows'); box.innerHTML='';
+  const map={}; res.rows.forEach(r=>map[r.id]=r);
+  state.rows.forEach(r=>{
+    const rr=map[r.id]||{raw:0,status:'keep',eff:0};
+    const it=ITEMS[r.type];
+    const needSchool = it.region && SCHOOLS[it.region];
+    const needRegion = it.region==='dobmerit';
+    const div=document.createElement('div');
+    div.className='rowline'+(rr.status==='drop'?' excluded':'');
+    let statusBadge='';
+    if(rr.status==='drop') statusBadge=`<span class="badge drop">택일 제외</span>`;
+    else if(rr.status==='half') statusBadge=`<span class="badge half">50% 중복</span>`;
+    else if(r.conflict) statusBadge=`<span class="badge keep">채택</span>`;
+    const canHalf = HALF_PAIRS.some(([x,y])=>r.type===x||r.type===y) && r.conflict;
+    div.innerHTML=`
+      <div class="rowgrid">
+        <div>${typeSelect(r)}</div>
+        <div>${(needSchool||needRegion)?(needSchool?schoolSelect(r):schoolSelect(r)):'<span style=\"font-size:.72rem;color:var(--ink3)\">지역 지정 없음</span>'}</div>
+        <div><input type="number" min="0" step="0.5" placeholder="개월" data-f="months" data-id="${r.id}" value="${r.months||''}"></div>
+      </div>
+      <div class="rowfoot">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="rowpts">${rr.eff.toFixed(3)}<small> / raw ${rr.raw.toFixed(3)}</small></span>
+          ${statusBadge}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label class="cbox" style="margin:0">중복그룹
+            <input type="text" maxlength="1" style="width:38px;text-align:center;text-transform:uppercase" data-f="conflict" data-id="${r.id}" value="${r.conflict||''}">
+          </label>
+          ${canHalf?`<label class="cbox" style="margin:0"><input type="checkbox" data-f="half" data-id="${r.id}" ${r.half?'checked':''}>50% 중복</label>`:''}
+          <button class="del" data-del="${r.id}" title="삭제">✕</button>
+        </div>
+      </div>`;
+    box.appendChild(div);
+  });
+}
+function bar(sum,capped,cap){
+  const scale=Math.max(cap,sum,0.0001);
+  const fw=Math.min(capped,cap)/scale*100;
+  const ww=Math.max(0,(sum-capped))/scale*100;
+  return `<div class="bar"><i class="fill" style="width:${fw}%"></i><i class="waste" style="width:${ww}%"></i></div>`;
+}
+function renderResults(res){
+  const box=$('#results'); box.innerHTML='';
+  Object.entries(res.groupRes).forEach(([g,gr])=>{
+    if(g==='G5' && !res.certOn) return;
+    if(gr.items.length===0 && gr.sum===0) return;
+    const capped=gr.capped>=gr.cap-1e-9 && gr.sum>gr.cap;
+    const d=document.createElement('div'); d.className='gres';
+    let items='';
+    gr.items.forEach(it=>{
+      const w=it.waste>0?`<span class="waste-t"> (−${it.waste.toFixed(3)} 초과)</span>`:'';
+      const nn=it.note?` · ${it.note}`:'';
+      items+=`<div class="itemline"><span>${it.def.label}${nn}</span><span class="iv">${it.capped.toFixed(3)}<span style="color:var(--ink3)"> /${it.def.cap}</span>${w}</span></div>`;
+    });
+    d.innerHTML=`<div class="gh"><span class="gt">${gr.name}</span>
+      <span class="gv ${capped?'capped':''}">${gr.capped.toFixed(3)} <span style="color:var(--ink3);font-weight:400">/ ${gr.cap}</span></span></div>
+      ${bar(gr.sum,gr.capped,gr.cap)}${items}
+      ${gr.waste>0?`<div class="itemline" style="border-top:1px solid var(--amber)"><span style="color:var(--amber)">그룹상한 초과로 버려짐</span><span class="iv" style="color:var(--amber)">−${gr.waste.toFixed(3)}</span></div>`:''}`;
+    box.appendChild(d);
+  });
+  if(!box.children.length) box.innerHTML='<p class="hint">경력을 추가하면 여기에 그룹별 결과가 표시됩니다.</p>';
+}
+function renderSummary(res){
+  $('#grand').textContent=res.grand.toFixed(3);
+  $('#commonTot').textContent=res.commonTot.toFixed(3);
+  $('#selTot').textContent=res.selTotal.toFixed(3);
+  const chips=$('#chips'); chips.innerHTML='';
+  Object.entries(res.groupRes).forEach(([g,gr])=>{
+    if(gr.capped<=0 && !(g==='G1')) return;
+    if(gr.sum<=0) return;
+    const full=gr.waste>0;
+    chips.insertAdjacentHTML('beforeend',
+      `<span class="chip ${full?'full':''}">${gr.name.split(' ')[0]} <b>${gr.capped.toFixed(2)}</b>/${gr.cap}</span>`);
+  });
+}
+function renderAll(){
+  const res=compute();
+  renderRows(res); renderResults(res); renderSummary(res);
+  try{ localStorage.setItem('gasanjeom_v1', JSON.stringify(state)); }catch(e){}
+}
+
+/* ---------- 이벤트 ---------- */
+$('#addRow').addEventListener('click',()=>{ state.rows.push(newRow()); renderAll(); });
+$('#rows').addEventListener('input',e=>{
+  const id=+e.target.dataset.id, f=e.target.dataset.f; if(!id||!f) return;
+  const r=state.rows.find(x=>x.id===id); if(!r) return;
+  if(f==='type'){ r.type=e.target.value; r.region=''; r.school=''; }
+  else if(f==='school'){ const [s,reg]=e.target.value.split('|'); r.school=s||''; r.region=reg||''; }
+  else if(f==='region'){ r.region=e.target.value; }
+  else if(f==='months'){ r.months=e.target.value; }
+  else if(f==='conflict'){ r.conflict=(e.target.value||'').toUpperCase(); }
+  else if(f==='half'){ r.half=e.target.checked; }
+  renderAll();
+});
+$('#rows').addEventListener('change',e=>{ if(e.target.dataset.f==='type'||e.target.dataset.f==='school') renderAll(); });
+$('#rows').addEventListener('click',e=>{
+  const id=e.target.dataset.del; if(!id) return;
+  state.rows=state.rows.filter(x=>x.id!==+id); renderAll();
+});
+$$('[data-c]').forEach(el=>el.addEventListener('input',e=>{ state.common[e.target.dataset.c]=e.target.value; renderAll(); }));
+$$('[data-a]').forEach(el=>el.addEventListener('input',e=>{ state.achieve[e.target.dataset.a]=e.target.value; renderAll(); }));
+$('#baseYear').addEventListener('change',e=>{ state.baseYear=e.target.value; renderAll(); });
+
+/* 테마 */
+$('#themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const dark=cur? cur==='dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+  document.documentElement.setAttribute('data-theme', dark?'light':'dark');
+});
+
+// 저장된 입력 복원(내 폰에만 저장됨) · 없으면 예시 1행
+(function restore(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('gasanjeom_v1')||'null');
+    if(saved && saved.rows){
+      state=saved;
+      rid=state.rows.reduce((m,r)=>Math.max(m,r.id||0),0);
+      $('#baseYear').value=state.baseYear||2027;
+      Object.keys(state.common||{}).forEach(k=>{const el=$(`[data-c="${k}"]`); if(el) el.value=state.common[k];});
+      Object.keys(state.achieve||{}).forEach(k=>{const el=$(`[data-a="${k}"]`); if(el) el.value=state.achieve[k];});
+    } else { state.rows.push(newRow()); }
+  }catch(e){ state.rows.push(newRow()); }
+})();
+renderAll();
+</script>
