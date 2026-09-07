@@ -75,7 +75,13 @@
   .calbtn.on{background:var(--teal); border-color:var(--teal); color:#fff}
   tr.pedit td{background:#F0FDFA; border-bottom:1px solid var(--line)}
   .prow{display:flex; align-items:center; gap:6px; margin-bottom:5px; flex-wrap:wrap; font-size:12.5px}
-  .prow input{width:88px; text-align:center}
+  .prow input{width:86px; text-align:center}
+  .prow .pno{
+    width:20px;height:20px;border-radius:50%;background:var(--teal-soft);color:var(--teal);
+    font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto
+  }
+  .prow .pt{color:var(--teal);font-weight:800;min-width:52px;text-align:right}
+  .prow .pmemo{flex:1 1 160px;min-width:140px;width:auto;text-align:left;color:var(--sub)}
   .prow .mo{color:var(--sub); font-weight:700; min-width:56px; text-align:right}
   .prow button{padding:3px 8px; font-size:12px; border-radius:6px; font-weight:600}
   .psum{font-weight:800; font-size:13px; color:var(--teal); margin-top:4px}
@@ -391,6 +397,10 @@ function ym(v){
   if(mo<1||mo>12) return null;
   return y*12+(mo-1);
 }
+function fmtYm(n){
+  var y=Math.floor(n/12), m=n%12+1;
+  return y+"."+(m<10?"0"+m:""+m);
+}
 function months(a,b){
   var x=ym(a), y=ym(b);
   if(x===null||y===null) return null;
@@ -625,23 +635,31 @@ function plist(k){
   return state.periods[k];
 }
 function periodRow(k){
-  var L=plist(k), tot=0, rows="";
+  var L=plist(k), tot=0, rows="", it=null;
+  for(var i=0;i<ITEMS.length;i++) if(ITEMS[i].k===k) it=ITEMS[i];
+  var rate = it? (it.rate||0) : 0;
   for(var i=0;i<L.length;i++){
     var mo=months(L[i][0],L[i][1]);
     if(mo!==null) tot+=mo;
     rows+="<div class='prow'>"+
-      "<input type='text' inputmode='numeric' placeholder='2022.03' data-pi='"+k+"|"+i+"|0' value='"+(L[i][0]||"")+"'>"+
+      "<span class='pno'>"+(i+1)+"</span>"+
+      "<input type='text' inputmode='numeric' placeholder='2018.03' data-pi='"+k+"|"+i+"|0' value='"+(L[i][0]||"")+"'>"+
       "<span>~</span>"+
-      "<input type='text' inputmode='numeric' placeholder='2027.02' data-pi='"+k+"|"+i+"|1' value='"+(L[i][1]||"")+"'>"+
+      "<input type='text' inputmode='numeric' placeholder='2019.02' data-pi='"+k+"|"+i+"|1' value='"+(L[i][1]||"")+"'>"+
       "<span class='mo'>"+(mo===null?"—":mo+"개월")+"</span>"+
-      "<button data-pdel='"+k+"|"+i+"'>삭제</button></div>";
+      "<span class='pt'>"+(mo===null||!rate?"":"+"+f(mo*rate,3))+"</span>"+
+      "<input type='text' class='pmemo' placeholder='어디서 무엇을 했는지 (예: 부광고 2-2 담임)' data-pi='"+k+"|"+i+"|2' value='"+((L[i][2]||"").replace(/"/g,'&quot;'))+"'>"+
+      "<button data-pdel='"+k+"|"+i+"' title='이 줄 지우기'>×</button></div>";
   }
   return "<tr class='pedit'><td colspan='7'>"+
-    "<div style='font-size:12px;color:var(--sub);margin-bottom:6px'>"+
-    "시작 ~ 끝 달을 넣으면 개월 수가 자동으로 계산됩니다. <b>끝 달도 포함</b>해서 셉니다. (예: 2022.03 ~ 2027.02 = 60개월)</div>"+
+    "<div style='font-size:12px;color:var(--sub);margin-bottom:7px'>"+
+    "<b>한 해에 한 줄</b>씩 넣으면 어느 해에 무엇을 했는지 남습니다. <b>끝 달도 포함</b>해서 셉니다. (2018.03~2019.02 = 12개월)</div>"+
     rows+
-    "<button data-padd='"+k+"'>+ 기간 추가</button>"+
-    (L.length? "<div class='psum'>합계 "+tot+"개월 → 위 칸에 반영했습니다</div>":"")+
+    "<div style='display:flex;gap:6px;flex-wrap:wrap;margin-top:6px'>"+
+      "<button data-pyear='"+k+"' style='background:var(--teal);color:#fff;border-color:var(--teal)'>+ 다음 학년도 추가</button>"+
+      "<button data-padd='"+k+"'>+ 빈 줄 추가</button>"+
+    "</div>"+
+    (L.length? "<div class='psum'>합계 "+tot+"개월"+(rate?" · 원점수 "+f(tot*rate,3):"")+" → 위 칸에 반영했습니다</div>":"")+
     "</td></tr>";
 }
 function syncPeriods(){
@@ -766,12 +784,25 @@ function bindInputs(){
     el.onclick=function(){
       var k=el.getAttribute("data-cal");
       openP[k]=!openP[k];
-      if(openP[k] && !plist(k).length) plist(k).push(["",""]);
+      if(openP[k] && !plist(k).length) plist(k).push(["","",""]);
       render(); save();
     };
   });
+  document.querySelectorAll("[data-pyear]").forEach(function(el){
+    el.onclick=function(){
+      var k=el.getAttribute("data-pyear"), L=plist(k), start=null;
+      for(var i=L.length-1;i>=0;i--){ var e=ym(L[i][1]); if(e!==null){ start=e+1; break; } }
+      if(start===null){                      // 첫 줄이면 올해 3월부터
+        var now=new Date(), y=now.getFullYear();
+        if(now.getMonth()+1 < 3) y--;
+        start=y*12+2;
+      }
+      L.push([fmtYm(start), fmtYm(start+11), ""]);
+      syncPeriods(); render(); save();
+    };
+  });
   document.querySelectorAll("[data-padd]").forEach(function(el){
-    el.onclick=function(){ plist(el.getAttribute("data-padd")).push(["",""]); render(); save(); };
+    el.onclick=function(){ plist(el.getAttribute("data-padd")).push(["","",""]); render(); save(); };
   });
   document.querySelectorAll("[data-pdel]").forEach(function(el){
     el.onclick=function(){
