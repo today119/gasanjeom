@@ -939,14 +939,41 @@ function fromHash(){
     return v;
   }catch(e){ return null; }
 }
-var fromLink=fromHash();
-state = fromLink || load();
-fill(); render();
-if(fromLink){
-  save();
-  history.replaceState(null,"",location.pathname+location.search);   // 주소창에서 자료 지우기
-  $("savedAt").textContent="링크에 담긴 자료를 불러왔습니다. 이 기기에 저장했습니다.";
-  window.scrollTo(0,0);
+function boot(fromLink){
+  state = fromLink || load();
+  fill(); render();
+  if(fromLink){
+    save();
+    history.replaceState(null,"",location.pathname+location.search);   // 주소창에서 자료 지우기
+    $("savedAt").textContent="링크에 담긴 자료를 불러왔습니다. 이 기기에 저장했습니다.";
+    window.scrollTo(0,0);
+  }
+}
+
+/* 압축 링크 #z=... : 내용이 길 때 쓴다(deflate-raw + base64). */
+function b64bytes(t){
+  var raw=atob(decodeURIComponent(t).replace(/-/g,"+").replace(/_/g,"/"));
+  var a=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++) a[i]=raw.charCodeAt(i);
+  return a;
+}
+function finish(v){
+  if(v){
+    v=migrate(v);
+    var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k];
+  }
+  boot(v||null);
+}
+var h0=location.hash||"";
+if(h0.indexOf("#z=")===0 && window.DecompressionStream){
+  try{
+    var ds=new DecompressionStream("deflate-raw");
+    new Response(new Blob([b64bytes(h0.slice(3))]).stream().pipeThrough(ds)).text()
+      .then(function(t){ finish(JSON.parse(t)); })
+      .catch(function(){ finish(null); });
+  }catch(e){ finish(null); }
+}else{
+  boot(fromHash());
 }
 })();
 </script>
