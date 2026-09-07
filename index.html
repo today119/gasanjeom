@@ -166,8 +166,9 @@
       </select>
       <span style="font-size:12px;color:var(--sub)">2030년부터 지역근무 그룹상한 2.75→3.0</span>
     </label>
-    <label class="row"><span class="l">커트라인(추정)</span>
-      <input type="number" id="cut" step="0.01" value="208.1"> 점
+    <label class="row"><span class="l">커트라인</span>
+      <input type="number" id="cut" step="0.01" value="208.2"> 점
+      <span style="font-size:12px;color:var(--sub)">2026년 인천 중등 교감 실제 커트 208.2</span>
     </label>
     <label class="row"><span class="l">① 경력평정</span>
       <input type="number" id="c1" step="0.01" value="70"> / 70
@@ -412,7 +413,7 @@ var state={};
 /* 개인 자료를 미리 채운 사본을 쓸 때만 값을 넣습니다. 공개본은 비워 둡니다. */
 var PRESET = {};
 function defaults(){
-  var s={__v:2, year:"2030", cut:208.1, c1:70, p1:100,p2:100,p3:100,
+  var s={__v:2, year:"2030", cut:208.2, c1:70, p1:100,p2:100,p3:100,
          q1:100,q2:100,q3:2,q4:"0",q5:"0",q6:"1",q7:"0",q8:"1"};
   ITEMS.forEach(function(it){ s["m_"+it.k]= ""; });
   for(var k in PRESET) s[k]=PRESET[k];
