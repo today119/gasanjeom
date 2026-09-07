@@ -115,6 +115,13 @@
     </div>
   </div>
 
+  <div class="card" id="emptyHint" style="background:var(--amber-soft);border-color:#FCD34D">
+    <div style="font-size:13.5px;line-height:1.7;color:#92400E">
+      <b>처음 여셨나요?</b> 아래 표에 <b>개월 수</b>를 넣으면 자동으로 계산됩니다.<br>
+      다른 기기에서 쓰던 자료가 있으면 맨 아래 <b>「자료 옮기기 → 불러오기」</b>를 쓰세요.
+    </div>
+  </div>
+
   <!-- ★ 앞으로 채울 칸 -->
   <div class="card">
     <h2>🎯 앞으로 채울 수 있는 칸 <span class="tag">큰 것부터</span></h2>
@@ -463,6 +470,7 @@ function render(){
 
   renderLevers(R);
   bindInputs();
+  var eh=$("emptyHint"); if(eh) eh.hidden = (R.gasan>0.001);
 
   // 커서 복원 — 숫자 한 자 칠 때마다 칸에서 튕기지 않게
   if(actKey){
@@ -569,7 +577,28 @@ function fill(){
   ["year","cut","c1","p1","p2","p3","q1","q2","q3","q4","q5","q6","q7","q8"].forEach(function(id){ $(id).value=state[id]; });
 }
 
-state=load(); fill(); render();
+/* 링크로 자료 넘기기 : 주소 뒤 #d=... 로 오면 그걸로 채운다.
+   '#' 뒤는 서버로 전송되지 않으므로 자료가 인터넷에 남지 않는다. */
+function fromHash(){
+  try{
+    var h=location.hash||"";
+    if(h.indexOf("#d=")!==0) return null;
+    var raw=decodeURIComponent(h.slice(3)).replace(/-/g,"+").replace(/_/g,"/");
+    var v=JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(!v||typeof v!=="object") return null;
+    var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k];
+    return v;
+  }catch(e){ return null; }
+}
+var fromLink=fromHash();
+state = fromLink || load();
+fill(); render();
+if(fromLink){
+  save();
+  history.replaceState(null,"",location.pathname+location.search);   // 주소창에서 자료 지우기
+  $("savedAt").textContent="링크에 담긴 자료를 불러왔습니다. 이 기기에 저장했습니다.";
+  window.scrollTo(0,0);
+}
 })();
 </script>
 </body>
