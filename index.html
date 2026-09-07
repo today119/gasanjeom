@@ -315,9 +315,9 @@ var ITEMS = [
    lv:"교육부지정 연구학교로 전보. 1년 +0.216", link:"resTotal"},
   {k:"abroad",  g:"common", n:"재외국민교육기관 파견",      rate:0.015, cap:0.5, m:0,
    lv:"재외 한국학교 파견. 1년 +0.18"},
-  {k:"train",   g:"common", n:"직무연수 학점",              rate:0.02,  cap:1.0, m:0, unit:"학점",
+  {k:"train",   g:"common", n:"직무연수 (학점 수 입력)",      rate:0.02,  cap:1.0, m:0, unit:"학점",
    lv:"1학점 0.02 · 학년도 상한 0.08(4학점) · 12.5년이면 만점. 나이스 「연수이수」의 평정학점"},
-  {k:"bully",   g:"common", n:"학교폭력 예방 유공",          rate:0.008333, cap:1.0, m:0,
+  {k:"bully",   g:"common", n:"학교폭력 예방 유공 (개월)",    rate:0.008333, cap:1.0, m:0,
    lv:"연 0.1 (월 0.008333) · 10년이면 만점"},
   // G1
   {k:"island",  g:"g1", n:"도서·벽지 경력",        rate:0.046, cap:2.0, m:0,
@@ -412,14 +412,26 @@ var state={};
 /* 개인 자료를 미리 채운 사본을 쓸 때만 값을 넣습니다. 공개본은 비워 둡니다. */
 var PRESET = {};
 function defaults(){
-  var s={year:"2030", cut:208.1, c1:70, p1:100,p2:100,p3:100,
+  var s={__v:2, year:"2030", cut:208.1, c1:70, p1:100,p2:100,p3:100,
          q1:100,q2:100,q3:2,q4:"0",q5:"0",q6:"1",q7:"0",q8:"1"};
   ITEMS.forEach(function(it){ s["m_"+it.k]= ""; });
   for(var k in PRESET) s[k]=PRESET[k];
   return s;
 }
+/* 예전 저장값 손보기:
+   직무연수·학교폭력은 원래 「점수」를 직접 넣는 칸이었는데 학점·개월 입력으로 바뀌었다.
+   그대로 두면 1.0점이 1학점(0.02) · 1개월(0.008)로 읽혀 2점 가까이 사라진다. */
+function migrate(v){
+  if(v && !v.__v){
+    var t=Number(v.m_train), b=Number(v.m_bully);
+    if(isFinite(t) && t>0 && t<=1.0)  v.m_train = String(Math.round(t/0.02));       // 점수 → 학점
+    if(isFinite(b) && b>0 && b<=1.0)  v.m_bully = String(Math.round(b/0.008333));   // 점수 → 개월
+    v.__v = 2;
+  }
+  return v;
+}
 function load(){
-  try{ var v=JSON.parse(localStorage.getItem(KEY)); if(v&&typeof v==="object"){ var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k]; return v; } }catch(e){}
+  try{ var v=JSON.parse(localStorage.getItem(KEY)); if(v&&typeof v==="object"){ v=migrate(v); var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k]; return v; } }catch(e){}
   return defaults();
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); $("savedAt").textContent="저장했습니다 · "+new Date().toLocaleTimeString('ko-KR'); }catch(e){ $("savedAt").textContent="저장 실패(브라우저 설정)"; } }
@@ -901,6 +913,7 @@ $("imp").onclick=function(){
   try{
     var v=JSON.parse($("box").value);
     if(!v || typeof v!=="object") throw 0;
+    v=migrate(v);
     var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k];
     state=v; fill(); render(); save();
     $("savedAt").textContent="불러왔습니다.";
@@ -921,6 +934,7 @@ function fromHash(){
     var raw=decodeURIComponent(h.slice(3)).replace(/-/g,"+").replace(/_/g,"/");
     var v=JSON.parse(decodeURIComponent(escape(atob(raw))));
     if(!v||typeof v!=="object") return null;
+    v=migrate(v);
     var d=defaults(); for(var k in d) if(!(k in v)) v[k]=d[k];
     return v;
   }catch(e){ return null; }
