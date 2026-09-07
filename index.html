@@ -761,10 +761,12 @@ function renderExcl(log, R){
   });
   var shown={};
   keys.forEach(function(k){ shown[k]=1; });
+  function hasP(k){ return !!(state.periods && state.periods[k] && state.periods[k].length); }
   EXCL.forEach(function(e){
     if(shown[e[0]]||shown[e[1]]) return;
-    if(m(e[0])>0 && m(e[1])>0)
-      hit.push(e[2]+" <span style='color:var(--sub)'>— 📅 로 기간을 넣으시면 겹치는 달을 자동 처리합니다</span>");
+    if(m(e[0])<=0 || m(e[1])<=0) return;
+    if(hasP(e[0]) && hasP(e[1])) return;   // 기간을 둘 다 넣었고 겹침이 없으면 문제 없음
+    hit.push(e[2]+" <span style='color:var(--sub)'>— 📅 로 기간을 넣으시면 겹치는지 자동으로 확인합니다</span>");
   });
   var g6=G6KEYS.filter(function(k){ return m(k)>0; });
   if(g6.length>1){
