@@ -378,7 +378,7 @@ var PRESET = {};
 function defaults(){
   var s={year:"2030", cut:208.1, c1:70, p1:100,p2:100,p3:100,
          q1:100,q2:100,q3:2,q4:"0",q5:"0",q6:"1",q7:"0",q8:"1"};
-  ITEMS.forEach(function(it){ s["m_"+it.k]= 0; });
+  ITEMS.forEach(function(it){ s["m_"+it.k]= ""; });
   for(var k in PRESET) s[k]=PRESET[k];
   return s;
 }
@@ -395,10 +395,12 @@ function compute(){
   var rows=[], byGroup={};
   // 1) 항목별 원점수 → 항목상한
   ITEMS.forEach(function(it){
-    var m = Number(state["m_"+it.k])||0;
+    var txt = state["m_"+it.k];
+    if(txt===undefined || txt===null) txt = "";
+    var m = Number(txt)||0;
     var raw = (it.direct!==undefined) ? m : m*it.rate;
     var capped = Math.min(raw, it.cap);
-    rows.push({it:it, m:m, raw:raw, capped:capped, itemCut: raw-capped});
+    rows.push({it:it, m:m, txt:String(txt), raw:raw, capped:capped, itemCut: raw-capped});
   });
   // 2) 연구학교 합산상한 1.00 (교육부지정 + 교육감지정)
   var a=null,b=null;
@@ -489,10 +491,10 @@ function render(){
       var totCut = r.itemCut + r.groupCut;
       h+="<tr><td class='n'>"+r.it.n+(r.it.dead?" <span class='pill small'>신규불가</span>":"")+"</td>"+
         "<td>"+(direct? "—" :
-          "<input type='text' inputmode='decimal' data-m='"+r.it.k+"' value='"+r.m+"'>")+"</td>"+
+          "<input type='text' inputmode='decimal' data-m='"+r.it.k+"' value='"+r.txt+"'>")+"</td>"+
         "<td>"+(direct?"—":r.it.rate)+"</td>"+
         "<td>"+(direct?
-          "<input type='text' inputmode='decimal' data-m='"+r.it.k+"' value='"+r.m+"'>" : f(r.raw,3))+"</td>"+
+          "<input type='text' inputmode='decimal' data-m='"+r.it.k+"' value='"+r.txt+"'>" : f(r.raw,3))+"</td>"+
         "<td>"+r.it.cap.toFixed(2)+"</td>"+
         "<td><b>"+f(r.final,3)+"</b></td>"+
         "<td class='cut'>"+(totCut>0.0005?"−"+f(totCut,3):"")+"</td></tr>";
