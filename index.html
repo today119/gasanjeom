@@ -411,6 +411,12 @@ function compute(){
 
 /* ───────── 그리기 ───────── */
 function render(){
+  // 표를 다시 그리면 입력칸이 새로 만들어져 커서가 빠진다 → 어디에 있었는지 기억해 둔다
+  var act=document.activeElement;
+  var actKey=(act&&act.getAttribute)?act.getAttribute("data-m"):null;
+  var selS=null, selE=null;
+  if(actKey){ try{ selS=act.selectionStart; selE=act.selectionEnd; }catch(e){} }
+
   var R=compute();
   $("total").textContent=f(R.total,2);
   $("v1").textContent=f(R.s1,2); $("v2").textContent=f(R.s2,2);
@@ -453,6 +459,15 @@ function render(){
 
   renderLevers(R);
   bindInputs();
+
+  // 커서 복원 — 숫자 한 자 칠 때마다 칸에서 튕기지 않게
+  if(actKey){
+    var back=document.querySelector('[data-m="'+actKey+'"]');
+    if(back){
+      back.focus();
+      if(selS!==null){ try{ back.setSelectionRange(selS,selE); }catch(e){} }
+    }
+  }
 }
 function trow(n,max,v){
   return "<tr><td class='n'>"+n+"</td><td>"+max+"</td><td><b>"+f(v,2)+"</b></td><td class='left'>"+f(max-v,2)+"</td></tr>";
