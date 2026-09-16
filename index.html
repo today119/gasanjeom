@@ -332,9 +332,9 @@ var ITEMS = [
   {k:"merit50", g:"g1", n:"학교교육 유공 50% 중복인정", rate:0.011, cap:0.264, m:0,
    lv:"도서·벽지/농어촌과 겹친 기간을 절반 인정 (2015.3.1~2017.2.28 만)", dead:1},
   // G2
-  {k:"head",    g:"g2", n:"보직교사(부장) 경력 — 2019.2.28 이전", rate:0.021, cap:1.75, m:0,
-   splitAt:"2019.03", splitTo:"head2",
-   lv:"부장 1개월 +0.021 · 83.3개월이면 만점. 기간을 넣으면 2019.3.1 이후 몫은 아래 ④3 으로 자동으로 옮깁니다"},
+  {k:"head",    g:"g2", n:"보직교사(부장) 경력 (제5조③)", rate:0.021, cap:1.75, m:0,
+   overflowAt:"2019.03", overflowTo:"head2",
+   lv:"부장 1개월 +0.021 · 83.4개월이면 상한 1.75. 기간을 넣으면 **상한을 넘긴 달 중 2019.3.1 이후 분**이 아래 ④3항으로 자동으로 넘어갑니다"},
   {k:"supervis",g:"g2", n:"장학사·교육연구사 근무경력", rate:0.021, cap:1.25, m:0,
    lv:"교육전문직 근무 (월 0.021)"},
   // G3 (제5조④)
@@ -342,8 +342,8 @@ var ITEMS = [
    lv:"특수학급 담당 (월 0.0105) · 특수학교는 0.021"},
   {k:"inclu",   g:"g3", n:"통합학급 담임",          rate:0.0053, cap:1.0, m:0,
    lv:"통합학급 담임 (월 0.0053). 2019.2.28 이전 취득분까지만", dead:1},
-  {k:"head2",   g:"g3", n:"보직교사 근무경력(④3) — 2019.3.1 이후", rate:0.005, cap:0.3, m:0,
-   lv:"2019.3.1 이후 부장은 월 0.005 (1년 +0.06) · 60개월이면 만점. 같은 부장이라도 3항보다 1/4 수준"},
+  {k:"head2",   g:"g3", n:"보직교사 근무경력(제5조④3)", rate:0.005, cap:0.3, m:0,
+   lv:"③항 상한(1.75)을 넘겨 버려지는 부장 경력을 여기로 담습니다 (2019.3.1 이후 분만, 월 0.005 · 60개월이면 0.3 만점)"},
   // G4
   {k:"res_sup", g:"g4", n:"교육감지정 연구·정책추진학교", rate:0.01, cap:1.0, m:0,
    lv:"교육감지정 연구학교 근무. 1년 +0.12", link:"resTotal"},
@@ -724,20 +724,27 @@ function syncPeriods(){
     if(!L || !L.length) continue;
     var it=null;
     for(var j=0;j<ITEMS.length;j++) if(ITEMS[j].k===k) it=ITEMS[j];
-    var cut = (it&&it.splitAt)? ym(it.splitAt) : null;
+    var cut = (it&&it.overflowAt)? ym(it.overflowAt) : null;
     var tot=0, after=0, any=false;
     for(var i=0;i<L.length;i++){
       var a=ym(L[i][0]), b=ym(L[i][1]);
       var mo=months(L[i][0],L[i][1]);
       if(mo===null) continue;
       any=true;
-      if(cut===null){ tot+=mo; continue; }
-      /* 한 줄이 기준일을 걸치면 달 단위로 쪼갠다 */
-      var pre = Math.max(0, Math.min(b, cut-1) - a + 1);
-      tot += pre; after += mo - pre;
+      tot += mo;
+      if(cut!==null){                       // 기준일 이후에 해당하는 달 수를 따로 센다
+        var pre = Math.max(0, Math.min(b, cut-1) - a + 1);
+        after += mo - pre;
+      }
     }
     if(any) state["m_"+k]=String(tot);
-    if(after>0 && it && it.splitTo) moved[it.splitTo]=(moved[it.splitTo]||0)+after;
+    /* ③ 상한을 넘겨 버려질 달만 ④3항으로 넘긴다 (버려지는 것 중 2019.3.1 이후 분만 가능) */
+    if(it && it.overflowTo && it.rate>0){
+      var room = Math.floor(it.cap / it.rate);          // 상한을 채우는 데 필요한 달 수
+      var spill = Math.max(0, tot - room);
+      var give = Math.min(spill, after);
+      if(give>0) moved[it.overflowTo] = (moved[it.overflowTo]||0) + give;
+    }
   }
   for(var t in moved){
     var own=0, PL=(state.periods&&state.periods[t])||[];
