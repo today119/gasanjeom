@@ -578,6 +578,7 @@ function render(){
     var gi=R.gi[gk];
     h+="<tr class='grp'><td class='n' colspan='5'>"+GROUPS[gk].name+
        (gi.cap!==null?" <span style='font-weight:600;color:var(--sub)'>(그룹상한 "+gi.cap.toFixed(2)+")</span>":"")+
+       (gi.cut>0.0005?" <span class='pill small' style='background:#FEE2E2;color:#991B1B'>상한 꽉 참 — 더 넣어도 안 오름</span>":"")+
        "</td><td>"+f(gi.kept,3)+"</td><td class='cut'>"+(gi.cut>0.0005?"−"+f(gi.cut,3):"")+"</td></tr>";
     R.rows.forEach(function(r){
       if(r.it.g!==gk) return;
@@ -591,7 +592,7 @@ function render(){
         "<td>"+(direct?
           "<input type='text' inputmode='decimal' data-m='"+r.it.k+"' value='"+r.txt+"'>" : f(r.raw,3))+"</td>"+
         "<td>"+r.it.cap.toFixed(2)+"</td>"+
-        "<td><b>"+f(r.final,3)+"</b></td>"+
+        "<td><b>"+f(r.final,3)+"</b>"+(r.raw>0.0005 && r.final<0.0005?" <span class='pill small' style='background:#FEE2E2;color:#991B1B'>상한으로 0점</span>":"")+"</td>"+
         "<td class='cut'>"+(totCut>0.0005?"−"+f(totCut,3):"")+"</td></tr>";
       if(openP[r.it.k]) h+=periodRow(r.it.k);
     });
