@@ -417,6 +417,15 @@ var TIERS = [
   {cap:0.5, keys:["cert","cert_b"],           n:"국가기술 자격증(상위 1개만)"}
 ];
 var G6KEYS = ["center","centerOld","youth","club","autoschool","homeroom","homeroomOld"];
+/* 「중복 경력 처리 기준」 첫 줄: 그룹 안에서 같은 기간에 사유가 2개 이상이면 하나만 인정.
+   인천교육 공헌실적(G6)은 값이 모두 연 0.06이라 같은 해에 여러 개를 맡아도 하나만 쌓인다. */
+(function(){
+  var NM={center:"중심학교(꿈두레)",centerOld:"중심학교(2014.2.28 이전)",youth:"청소년단체",
+          club:"동아리봉사단",autoschool:"자율학교 담당",homeroom:"담임교사",homeroomOld:"담임교사(2020.2.29 이전)"};
+  for(var i=0;i<G6KEYS.length;i++) for(var j=i+1;j<G6KEYS.length;j++){
+    EXCL.push([G6KEYS[i], G6KEYS[j], NM[G6KEYS[i]]+" ↔ "+NM[G6KEYS[j]]+" (같은 해엔 하나만)"]);
+  }
+})();
 
 /* "2022.03" 같은 글자를 달 수로. 시작·끝 달을 모두 포함해서 센다. */
 function ym(v){
