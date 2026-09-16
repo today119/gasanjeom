@@ -361,16 +361,16 @@ var ITEMS = [
    lv:"신설학교 근무 (개교 학년도 1년만) + 설립사무 겸임. 1년 +0.054"},
   // G5
   {k:"cert",    g:"g5", n:"국가기술 자격증",         rate:0, cap:0.5, m:0, direct:0,
-   lv:"당해 직위에서 취득한 정보화 자격증 등 +0.5 (2029.3.31 명부까지)"},
+   lv:"A등급 +0.5 — 워드프로세서·컴퓨터활용능력1급·기사·기능장 등, 당해 직위에서 취득. ⚠️ 2029.3.1 삭제 예정이라 그 전 명부까지만"},
   // G6
   {k:"center",  g:"g6", n:"중심학교 담당교사 (2014.3.1~)", rate:0.005, cap:0.5, m:0,
    lv:"꿈두레(공동교육과정) 중심학교 담당. 1년 +0.06 · 상한 0.5"},
   {k:"centerOld",g:"g6", n:"중심학교 담당교사 (2014.2.28 이전)", rate:0.005, cap:0.25, m:0,
    lv:"2009.3.1~2014.2.28 근무분은 상한이 0.25", dead:1},
   {k:"youth",   g:"g6", n:"청소년단체 지도교사",      rate:0.005, cap:0.5, m:0,
-   lv:"청소년단체 지도 (2004.1.1~). 1년 +0.06 · 상한 0.5"},
+   lv:"청소년단체 지도 (2004.3.1~). 1년 +0.06 · 동아리봉사단과 합쳐 상한 0.5"},
   {k:"club",    g:"g6", n:"동아리봉사단 지도교사",    rate:0.005, cap:0.5, m:0,
-   lv:"동아리봉사단 지도 (2016.3.1~). 1년 +0.06 · 청소년단체와 별개로 또 0.5까지"},
+   lv:"동아리봉사단 지도 (2016.3.1~). 1년 +0.06 · ⚠️ 청소년단체와 상한 0.5를 함께 씁니다"},
   {k:"autoschool",g:"g6", n:"자율학교 담당교사",     rate:0.005, cap:0.5, m:0,
    lv:"자율학교 담당교사. 1년 +0.06 (2016.3.1 이후)"},
   {k:"homeroom",g:"g6", n:"담임교사 경력 (2020.3.1~)", rate:0.003, cap:0.3, m:0,
@@ -378,7 +378,7 @@ var ITEMS = [
   {k:"homeroomOld",g:"g6", n:"담임교사 경력 (2020.2.29 이전)", rate:0.036, cap:0.3, m:0, unit:"년",
    lv:"2016.3.1~2020.2.29 은 연 단위로 0.036 (학년도 수를 넣으세요)"},
   {k:"cert_b",  g:"g5", n:"국가기술 자격증 B등급",     rate:0, cap:0.25, m:0, direct:0,
-   lv:"B등급 자격증 +0.25 (A등급은 위 칸)"}
+   lv:"기능사2급·워드프로세서2~3급·컴활2~3급 등 +0.25. A등급(워드프로세서·컴활1급·기사 등 0.5)과 합쳐 상한 0.5, 상위 1개만 인정"}
 ];
 
 /* 규정 제5조⑧ 『중복 경력 처리 기준』 — 같은 기간이 겹치면 택일해야 하는 짝 */
@@ -408,6 +408,13 @@ var EXCL = [
   ["head2","homeroomOld","보직교사 근무경력(④3) ↔ 담임교사 경력(2020.2.29 이전)"],
   ["inclu","homeroomOld","통합학급 담임 ↔ 담임교사 경력(2020.2.29 이전)"],
   ["res_moe","practice68","연구학교(공통) ↔ 교육실습 협력학교(6~8주)"]
+];
+/* 공고의 「1단계 상한」 — 아래 묶음은 상한을 같이 쓴다 (엑셀 항목표의 1단계/1단계상한점) */
+var TIERS = [
+  {cap:0.5, keys:["youth","club"],            n:"청소년단체·동아리봉사단"},
+  {cap:0.5, keys:["center","centerOld"],      n:"중심학교 담당교사"},
+  {cap:0.3, keys:["homeroom","homeroomOld"],  n:"담임교사 경력"},
+  {cap:0.5, keys:["cert","cert_b"],           n:"국가기술 자격증(상위 1개만)"}
 ];
 var G6KEYS = ["center","centerOld","youth","club","autoschool","homeroom","homeroomOld"];
 
@@ -485,6 +492,18 @@ function compute(ex){
       if(over>0){ a.capped-=over; a.itemCut+=over; }
     }
   }
+  // 2-2) 1단계 상한 — 같은 칸을 나눠 쓰는 항목들
+  TIERS.forEach(function(t){
+    var list = rows.filter(function(r){ return t.keys.indexOf(r.it.k)>=0; });
+    var sum = list.reduce(function(a,r){ return a+r.capped; },0);
+    if(sum > t.cap && sum > 0){
+      var over = sum - t.cap;
+      list.forEach(function(r){
+        var cut = r.capped * (over/sum);
+        r.capped -= cut; r.itemCut += cut; r.tierCut = cut;
+      });
+    }
+  });
   // 3) 그룹상한
   var groupInfo={};
   Object.keys(GROUPS).forEach(function(gk){
