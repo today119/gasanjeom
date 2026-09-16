@@ -329,9 +329,12 @@ var ITEMS = [
    lv:"특수지역 지정교(영종권 등) 근무 (B구역 월 0.015)"},
   {k:"merit",   g:"g1", n:"학교교육 유공경력",      rate:0.022, cap:2.0, m:0,
    lv:"학교교육 유공 (월 0.022)"},
+  {k:"merit50", g:"g1", n:"학교교육 유공 50% 중복인정", rate:0.011, cap:0.264, m:0,
+   lv:"도서·벽지/농어촌과 겹친 기간을 절반 인정 (2015.3.1~2017.2.28 만)", dead:1},
   // G2
-  {k:"head",    g:"g2", n:"보직교사(부장) 경력",    rate:0.021, cap:1.75, m:0,
-   lv:"부장 1개월 +0.021 · 83.3개월이면 만점"},
+  {k:"head",    g:"g2", n:"보직교사(부장) 경력 — 2019.2.28 이전", rate:0.021, cap:1.75, m:0,
+   splitAt:"2019.03", splitTo:"head2",
+   lv:"부장 1개월 +0.021 · 83.3개월이면 만점. 기간을 넣으면 2019.3.1 이후 몫은 아래 ④3 으로 자동으로 옮깁니다"},
   {k:"supervis",g:"g2", n:"장학사·교육연구사 근무경력", rate:0.021, cap:1.25, m:0,
    lv:"교육전문직 근무 (월 0.021)"},
   // G3 (제5조④)
@@ -339,15 +342,19 @@ var ITEMS = [
    lv:"특수학급 담당 (월 0.0105) · 특수학교는 0.021"},
   {k:"inclu",   g:"g3", n:"통합학급 담임",          rate:0.0053, cap:1.0, m:0,
    lv:"통합학급 담임 (월 0.0053). 2019.2.28 이전 취득분까지만", dead:1},
-  {k:"head2",   g:"g3", n:"보직교사 근무경력(④3)",  rate:0.005, cap:0.3, m:0,
-   lv:"2019.3.1 이후 부장 1년 +0.06 · 60개월이면 만점"},
+  {k:"head2",   g:"g3", n:"보직교사 근무경력(④3) — 2019.3.1 이후", rate:0.005, cap:0.3, m:0,
+   lv:"2019.3.1 이후 부장은 월 0.005 (1년 +0.06) · 60개월이면 만점. 같은 부장이라도 3항보다 1/4 수준"},
   // G4
   {k:"res_sup", g:"g4", n:"교육감지정 연구·정책추진학교", rate:0.01, cap:1.0, m:0,
    lv:"교육감지정 연구학교 근무. 1년 +0.12", link:"resTotal"},
-  {k:"practice",g:"g4", n:"교육실습 대용·협력학교",  rate:0.01, cap:1.0, m:0,
-   lv:"교육실습 협력학교 (실습학기제 월 0.01, 학기 0.03)"},
+  {k:"practice",g:"g4", n:"교육실습 협력학교 (2~6주)", rate:0.01, cap:1.0, m:0, unit:"건",
+   lv:"2~6주 실습 1건 +0.01 (지분 75%면 0.0075, 50% 0.005, 25% 0.0025 → 건수 대신 점수 비율만큼 넣으세요)"},
+  {k:"practice68",g:"g4", n:"교육실습 협력학교 (6~8주)", rate:0.02, cap:1.0, m:0, unit:"건",
+   lv:"6~8주 실습 1건 +0.02 (지분 75% 0.015, 50% 0.01, 25% 0.005)"},
+  {k:"practiceSem",g:"g4", n:"교육실습학기제 (2024.3.1~)", rate:0.01, cap:1.0, m:0, unit:"개월",
+   lv:"실습학기제 운영교 월 0.01"},
   {k:"classimp",g:"g4", n:"교실수업개선 연구경력",   rate:0,    cap:1.0, m:0, direct:0,
-   lv:"2020.2.29 이전 취득분만 인정 — 신규 불가", dead:1},
+   lv:"1등급 0.15 · 2등급 0.1 · 3등급 0.05 — 2020.2.29 이전 취득분만 인정(신규 불가). 교육청 항목표에 점수가 남아 있는 건 기존 취득분 계산용", dead:1},
   {k:"islmerit",g:"g4", n:"도서·벽지 교육진흥 유공", rate:0.0081, cap:0.5, m:0,
    lv:"관내 도서·벽지교 근무 (B구역 월 0.0081). 1년 +0.097"},
   {k:"newsch",  g:"g4", n:"신설학교 근무경력",       rate:0.0045, cap:0.5, m:0,
@@ -356,14 +363,22 @@ var ITEMS = [
   {k:"cert",    g:"g5", n:"국가기술 자격증",         rate:0, cap:0.5, m:0, direct:0,
    lv:"당해 직위에서 취득한 정보화 자격증 등 +0.5 (2029.3.31 명부까지)"},
   // G6
-  {k:"center",  g:"g6", n:"중심학교 담당교사",       rate:0.005, cap:0.5, m:0,
-   lv:"꿈두레(공동교육과정) 중심학교 담당. 1년 +0.06 (2009.3.1 이후)"},
-  {k:"youth",   g:"g6", n:"청소년봉사단 지도교사",    rate:0.005, cap:0.5, m:0,
-   lv:"청소년단체(2004.3.1~) · 동아리봉사단(2016.3.1~). 1년 +0.06"},
+  {k:"center",  g:"g6", n:"중심학교 담당교사 (2014.3.1~)", rate:0.005, cap:0.5, m:0,
+   lv:"꿈두레(공동교육과정) 중심학교 담당. 1년 +0.06 · 상한 0.5"},
+  {k:"centerOld",g:"g6", n:"중심학교 담당교사 (2014.2.28 이전)", rate:0.005, cap:0.25, m:0,
+   lv:"2009.3.1~2014.2.28 근무분은 상한이 0.25", dead:1},
+  {k:"youth",   g:"g6", n:"청소년단체 지도교사",      rate:0.005, cap:0.5, m:0,
+   lv:"청소년단체 지도 (2004.1.1~). 1년 +0.06 · 상한 0.5"},
+  {k:"club",    g:"g6", n:"동아리봉사단 지도교사",    rate:0.005, cap:0.5, m:0,
+   lv:"동아리봉사단 지도 (2016.3.1~). 1년 +0.06 · 청소년단체와 별개로 또 0.5까지"},
   {k:"autoschool",g:"g6", n:"자율학교 담당교사",     rate:0.005, cap:0.5, m:0,
    lv:"자율학교 담당교사. 1년 +0.06 (2016.3.1 이후)"},
-  {k:"homeroom",g:"g6", n:"담임교사 경력",          rate:0.003, cap:0.3, m:0,
-   lv:"담임 1년 +0.036 (2016.3.1 이후). 같은 해 다른 G6 항목과 택일"}
+  {k:"homeroom",g:"g6", n:"담임교사 경력 (2020.3.1~)", rate:0.003, cap:0.3, m:0,
+   lv:"담임 월 0.003 (1년 +0.036). 같은 해 다른 G6 항목과 택일"},
+  {k:"homeroomOld",g:"g6", n:"담임교사 경력 (2020.2.29 이전)", rate:0.036, cap:0.3, m:0, unit:"년",
+   lv:"2016.3.1~2020.2.29 은 연 단위로 0.036 (학년도 수를 넣으세요)"},
+  {k:"cert_b",  g:"g5", n:"국가기술 자격증 B등급",     rate:0, cap:0.25, m:0, direct:0,
+   lv:"B등급 자격증 +0.25 (A등급은 위 칸)"}
 ];
 
 /* 규정 제5조⑧ 『중복 경력 처리 기준』 — 같은 기간이 겹치면 택일해야 하는 짝 */
@@ -386,9 +401,15 @@ var EXCL = [
   ["rural","inclu",  "농어촌 경력 ↔ 통합학급 담임"],
   ["res_moe","res_sup","연구학교(공통) ↔ 교육감지정 연구·정책추진학교"],
   ["res_moe","practice","연구학교(공통) ↔ 교육실습 대용·협력학교"],
-  ["res_moe","islmerit","연구학교(공통) ↔ 도서·벽지 교육진흥 유공"]
+  ["res_moe","islmerit","연구학교(공통) ↔ 도서·벽지 교육진흥 유공"],
+  ["head","club",      "보직교사 경력(③) ↔ 동아리봉사단 지도교사"],
+  ["head2","club",     "보직교사 근무경력(④3) ↔ 동아리봉사단 지도교사"],
+  ["head","homeroomOld","보직교사 경력(③) ↔ 담임교사 경력(2020.2.29 이전)"],
+  ["head2","homeroomOld","보직교사 근무경력(④3) ↔ 담임교사 경력(2020.2.29 이전)"],
+  ["inclu","homeroomOld","통합학급 담임 ↔ 담임교사 경력(2020.2.29 이전)"],
+  ["res_moe","practice68","연구학교(공통) ↔ 교육실습 협력학교(6~8주)"]
 ];
-var G6KEYS = ["center","youth","autoschool","homeroom"];
+var G6KEYS = ["center","centerOld","youth","club","autoschool","homeroom","homeroomOld"];
 
 /* "2022.03" 같은 글자를 달 수로. 시작·끝 달을 모두 포함해서 센다. */
 function ym(v){
@@ -677,15 +698,32 @@ function periodRow(k){
 }
 function syncPeriods(){
   if(!state.periods) return;
+  var moved={};                       // 자동으로 옮겨 담을 항목 (예: 2019.3.1 이후 부장 → ④3)
   for(var k in state.periods){
     var L=state.periods[k];
     if(!L || !L.length) continue;
-    var tot=0, any=false;
+    var it=null;
+    for(var j=0;j<ITEMS.length;j++) if(ITEMS[j].k===k) it=ITEMS[j];
+    var cut = (it&&it.splitAt)? ym(it.splitAt) : null;
+    var tot=0, after=0, any=false;
     for(var i=0;i<L.length;i++){
+      var a=ym(L[i][0]), b=ym(L[i][1]);
       var mo=months(L[i][0],L[i][1]);
-      if(mo!==null){ tot+=mo; any=true; }
+      if(mo===null) continue;
+      any=true;
+      if(cut===null){ tot+=mo; continue; }
+      /* 한 줄이 기준일을 걸치면 달 단위로 쪼갠다 */
+      var pre = Math.max(0, Math.min(b, cut-1) - a + 1);
+      tot += pre; after += mo - pre;
     }
     if(any) state["m_"+k]=String(tot);
+    if(after>0 && it && it.splitTo) moved[it.splitTo]=(moved[it.splitTo]||0)+after;
+  }
+  for(var t in moved){
+    var own=0, PL=(state.periods&&state.periods[t])||[];
+    for(var i=0;i<PL.length;i++){ var mo=months(PL[i][0],PL[i][1]); if(mo!==null) own+=mo; }
+    state["m_"+t]=String(own+moved[t]);
+    state["auto_"+t]=moved[t];        // 안내 문구용
   }
 }
 
